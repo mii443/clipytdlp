@@ -5,6 +5,7 @@ use crate::clipboard_handler::URLHandler;
 mod yt_dlp;
 mod extractor;
 mod clipboard_handler;
+mod notification;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
