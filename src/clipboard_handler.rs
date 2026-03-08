@@ -21,6 +21,7 @@ impl ClipboardHandler for URLHandler {
     fn on_clipboard_change(&mut self) -> clipboard_master::CallbackResult {
         if let Ok(contents) = self.clipboard_ctx.get_contents() {
             if extractor::is_valid_youtube_url(&contents) {
+                println!("Valid YouTube URL: {}", contents);
                 let url = extractor::extract_video_id(&contents).unwrap();
                 let download_url = yt_dlp::get_download_url(&url, &self.yt_dlp_path).unwrap();
                 println!("Download URL: {}", download_url);

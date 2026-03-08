@@ -35,8 +35,9 @@ pub enum YtDlpError {
 
 pub fn get_download_url(url: &str, yt_dlp_path: &Path) -> Result<String, YtDlpError> {
     let output = Command::new(yt_dlp_path)
-        .arg("--quiet")
-        .arg("--get-url")
+        .args(["--quiet", "--get-url"])
+        .args(["-S", "res:1080"])
+        .args(["-f", "bv*+ba/best"])
         .arg(url)
         .output()
         .map_err(YtDlpError::CommandExec)?;
