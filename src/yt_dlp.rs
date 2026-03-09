@@ -14,6 +14,12 @@ pub enum YtDlpError {
     #[error("failed to decode yt-dlp output as UTF-8")]
     InvalidUtf8(#[source] std::string::FromUtf8Error),
 
+    #[error("yt-dlp exited with {code}: {stderr}")]
+    ProcessFailed { code: i32, stderr: String },
+
+    #[error("yt-dlp returned no URL")]
+    EmptyOutput,
+
     #[error("download failed (HTTP {0})")]
     HttpStatus(reqwest::StatusCode),
 
@@ -36,13 +42,25 @@ pub enum YtDlpError {
 pub fn get_download_url(url: &str, yt_dlp_path: &Path) -> Result<String, YtDlpError> {
     let output = Command::new(yt_dlp_path)
         .args(["--quiet", "--get-url"])
-        .args(["-f", "best[height<=1080][acodec!=none]"])
-        .args(["-S", "res:1080"])
+        .args(["-f", "best[acodec!=none]"])
+        .arg("--")
         .arg(url)
         .output()
         .map_err(YtDlpError::CommandExec)?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        return Err(YtDlpError::ProcessFailed {
+            code: output.status.code().unwrap_or(-1),
+            stderr,
+        });
+    }
+
     let stdout = String::from_utf8(output.stdout).map_err(YtDlpError::InvalidUtf8)?;
-    Ok(stdout.trim().to_string())
+    let url = stdout.trim().to_string();
+    if url.is_empty() {
+        return Err(YtDlpError::EmptyOutput);
+    }
+    Ok(url)
 }
 
 pub fn default_download_path() -> PathBuf {
